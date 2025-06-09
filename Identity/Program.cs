@@ -12,6 +12,22 @@ builder.Services.AddDbContext<IdentityContext>(options =>
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>().AddEntityFrameworkStores<IdentityContext>();
 
+
+builder.Services.Configure<IdentityOptions>(options =>
+{
+    options.Password.RequiredLength = 6; //Minimum karaktersayý
+    options.Password.RequireNonAlphanumeric = false; //Alfanümerik karakter zorunluluðu
+    options.Password.RequireLowercase = false; //küçük harf kullanma zorunluluðu
+    options.Password.RequireUppercase = false; //büyük harf kullanma zorunluluðu
+    options.Password.RequireDigit = false; //rakam kullanma zorunluluðu
+
+
+    options.User.RequireUniqueEmail = true; //1 mail tek kullanýcý mý
+    options.User.AllowedUserNameCharacters = "abcçdefgðhýijklmnoöprstuüvyzqw"; //bu karakterler dýþýnda tanýmlanamaz
+
+});
+
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
