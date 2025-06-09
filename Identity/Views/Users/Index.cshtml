@@ -19,8 +19,12 @@
                 <td>@item.FullName</td>
                 <td>@item.Email</td>
                 <td>
-                    <a href="#" class="btn btn-warning btn-sm">Edit</a>
-                    <a href="#" class="btn btn-danger btn-sm">Delete</a>
+                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Edit</a>
+                    
+                    <form asp-action="Delete" method="post" onsubmit="return confirm('Emin misiniz?')" style="display: inline-block;">
+                        <input type="hidden" value="@item.Id" name="Id" />
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
 
                 </td>
             </tr>
