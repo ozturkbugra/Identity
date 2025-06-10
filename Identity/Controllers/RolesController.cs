@@ -13,7 +13,7 @@ namespace Identity.Controllers
         }
         public IActionResult Index()
         {
-            return View();
+            return View(_roleManager.Roles.ToList());
         }
         public IActionResult Create()
         {
