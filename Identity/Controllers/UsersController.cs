@@ -3,6 +3,7 @@ using Identity.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text;
 
 namespace Identity.Controllers
 {
@@ -31,7 +32,19 @@ namespace Identity.Controllers
         {
             if (ModelState.IsValid)
             {
-                var user = new AppUser { UserName = model.Email, Email = model.Email , FullName = model.FullName};
+                string baseUserName = RemoveDiacritics(model.FullName!.Replace(" ", ""));
+
+                Random rnd = new Random();
+                int randomNumber = rnd.Next(1000, 9999);
+
+                string generatedUserName = baseUserName + randomNumber;
+
+                var user = new AppUser
+                {
+                    UserName = generatedUserName,
+                    Email = model.Email,
+                    FullName = model.FullName
+                };
 
                 IdentityResult result = await _userManager.CreateAsync(user, model.Password!);
                 if (result.Succeeded)
@@ -43,14 +56,36 @@ namespace Identity.Controllers
                 {
                     ModelState.AddModelError("", error.Description);
                 }
-                
             }
+
             return View(model);
         }
 
-        public async Task< IActionResult> Edit(string id)
+
+        // Türkçe karakterleri İngilizce'ye çeviren yardımcı fonksiyon
+        private string RemoveDiacritics(string text)
         {
-            if(id == null)
+            Dictionary<char, char> replacements = new Dictionary<char, char>
+            {
+                {'ç', 'c'}, {'Ç', 'C'},
+                {'ğ', 'g'}, {'Ğ', 'G'},
+                {'ı', 'i'}, {'İ', 'I'},
+                {'ö', 'o'}, {'Ö', 'O'},
+                {'ş', 's'}, {'Ş', 'S'},
+                {'ü', 'u'}, {'Ü', 'U'}
+            };
+
+            var result = new StringBuilder();
+            foreach (char c in text)
+            {
+                result.Append(replacements.ContainsKey(c) ? replacements[c] : c);
+            }
+            return result.ToString();
+        }
+
+        public async Task<IActionResult> Edit(string id)
+        {
+            if (id == null)
             {
                 return RedirectToAction("Index");
 
@@ -58,7 +93,7 @@ namespace Identity.Controllers
 
             var user = await _userManager.FindByIdAsync(id);
 
-            if(user != null)
+            if (user != null)
             {
                 ViewBag.Roles = await _roleManager.Roles.Select(x => x.Name).ToListAsync();
                 return View(new EditViewModel
@@ -77,7 +112,7 @@ namespace Identity.Controllers
         [HttpPost]
         public async Task<IActionResult> Edit(string id, EditViewModel model)
         {
-            if(id != model.Id)
+            if (id != model.Id)
             {
                 return RedirectToAction("Index");
             }
@@ -86,14 +121,14 @@ namespace Identity.Controllers
             {
                 var user = await _userManager.FindByIdAsync(model.Id);
 
-                if(user != null)
+                if (user != null)
                 {
                     user.Email = model.Email;
                     user.FullName = model.FullName;
 
                     var result = await _userManager.UpdateAsync(user);
 
-                    if(result.Succeeded && !string.IsNullOrEmpty(model.Password))
+                    if (result.Succeeded && !string.IsNullOrEmpty(model.Password))
                     {
                         await _userManager.RemovePasswordAsync(user);
                         await _userManager.AddPasswordAsync(user, model.Password);
@@ -102,7 +137,7 @@ namespace Identity.Controllers
                     if (result.Succeeded)
                     {
                         await _userManager.RemoveFromRolesAsync(user, await _userManager.GetRolesAsync(user));
-                        if(model.SelectedRoles != null)
+                        if (model.SelectedRoles != null)
                         {
                             await _userManager.AddToRolesAsync(user, model.SelectedRoles);
 
@@ -117,7 +152,7 @@ namespace Identity.Controllers
                 }
             }
 
-            return View(model); 
+            return View(model);
         }
 
 
@@ -126,7 +161,7 @@ namespace Identity.Controllers
         {
             var user = await _userManager.FindByIdAsync(id);
 
-            if(user != null)
+            if (user != null)
             {
                 await _userManager.DeleteAsync(user);
             }
