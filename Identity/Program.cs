@@ -1,4 +1,5 @@
 using Identity.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,9 +24,19 @@ builder.Services.Configure<IdentityOptions>(options =>
 
 
     options.User.RequireUniqueEmail = true; //1 mail tek kullanýcý mý
-    
+
     //options.User.AllowedUserNameCharacters = "abcçdefgðhýijklmnoöprstuüvyzqw"; //bu karakterler dýþýnda tanýmlanamaz
 
+    options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+    options.Lockout.MaxFailedAccessAttempts = 5;
+    // 5 yanlýþ giriþten sonra hesap 5 dakika kitlenir
+});
+
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options => { 
+    options.LoginPath = "/Account/Login";
+    options.AccessDeniedPath = "/Account/AccessDenied"; // yetkisiz olduðunda yönlendirileceði kýsým
+    options.SlidingExpiration = true; // bu kýsým otomatik süre yeniler alttaki ile 10 gün sonra allta belirtilen kadar
+    options.ExpireTimeSpan = TimeSpan.FromDays(30);
 });
 
 
@@ -43,7 +54,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
