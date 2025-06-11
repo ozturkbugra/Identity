@@ -2,6 +2,7 @@
 using Identity.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Text;
 
 namespace Identity.Controllers
 {
@@ -17,6 +18,97 @@ namespace Identity.Controllers
             _roleManager = roleManager;
             _signInManager = signInManager;
         }
+
+        public IActionResult Create()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(CreateViewModel model)
+        {
+            if (ModelState.IsValid)
+            {
+                string baseUserName = RemoveDiacritics(model.FullName!.Replace(" ", ""));
+
+                Random rnd = new Random();
+                int randomNumber = rnd.Next(1000, 9999);
+
+                string generatedUserName = baseUserName + randomNumber;
+
+                var user = new AppUser
+                {
+                    UserName = generatedUserName,
+                    Email = model.Email,
+                    FullName = model.FullName
+                };
+
+                IdentityResult result = await _userManager.CreateAsync(user, model.Password!);
+                if (result.Succeeded)
+                {
+                    var token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+                    var url = Url.Action("ConfirmEmail", "Account", new { user.Id, token });
+
+                    TempData["message"] = "Mailinizi Onaylamanız Gerekmektedir";
+
+                    return RedirectToAction("Login","Account");
+                }
+
+                foreach (IdentityError error in result.Errors)
+                {
+                    ModelState.AddModelError("", error.Description);
+                }
+            }
+
+            return View(model);
+        }
+
+        // Türkçe karakterleri İngilizce'ye çeviren yardımcı fonksiyon
+        private string RemoveDiacritics(string text)
+        {
+            Dictionary<char, char> replacements = new Dictionary<char, char>
+            {
+                {'ç', 'c'}, {'Ç', 'C'},
+                {'ğ', 'g'}, {'Ğ', 'G'},
+                {'ı', 'i'}, {'İ', 'I'},
+                {'ö', 'o'}, {'Ö', 'O'},
+                {'ş', 's'}, {'Ş', 'S'},
+                {'ü', 'u'}, {'Ü', 'U'}
+            };
+
+            var result = new StringBuilder();
+            foreach (char c in text)
+            {
+                result.Append(replacements.ContainsKey(c) ? replacements[c] : c);
+            }
+            return result.ToString();
+        }
+
+        public async Task<IActionResult> ConfirmEmail(string Id, string token)
+        {
+            if(Id == null || token == null)
+            {
+                TempData["message"] = "geçersiz token bilgisi";
+                return View();
+            }
+
+            var user = await _userManager.FindByIdAsync(Id);
+            if(user != null)
+            {
+                var result = await _userManager.ConfirmEmailAsync(user, token);
+
+                if (result.Succeeded)
+                {
+                    TempData["message"] = "Hesabınız Onaylandı";
+                    return RedirectToAction("Login","Account");
+                }
+            }
+            TempData["message"] = "Kullanıcı Bulunamadı";
+            return View();
+
+        }
+
+
         public IActionResult Login()
         {
             return View();
@@ -32,6 +124,13 @@ namespace Identity.Controllers
                 if(user != null)
                 {
                     await _signInManager.SignOutAsync();// ilk önce var olan cookie sıfırlansın
+
+                    if(!await _userManager.IsEmailConfirmedAsync(user))
+                    {
+                        ModelState.AddModelError("", "E Mail adresiniz onaylı olmalıdır");
+                        return View(model);
+                    }
+
 
                     var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, true);
 
@@ -63,5 +162,7 @@ namespace Identity.Controllers
 
             return View(model);
         }
+
+
     }
 }

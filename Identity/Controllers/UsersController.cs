@@ -22,67 +22,10 @@ namespace Identity.Controllers
         {
             return View(_userManager.Users.ToList());
         }
-        public IActionResult Create()
-        {
-            return View();
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create(CreateViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                string baseUserName = RemoveDiacritics(model.FullName!.Replace(" ", ""));
-
-                Random rnd = new Random();
-                int randomNumber = rnd.Next(1000, 9999);
-
-                string generatedUserName = baseUserName + randomNumber;
-
-                var user = new AppUser
-                {
-                    UserName = generatedUserName,
-                    Email = model.Email,
-                    FullName = model.FullName
-                };
-
-                IdentityResult result = await _userManager.CreateAsync(user, model.Password!);
-                if (result.Succeeded)
-                {
-                    return RedirectToAction("Index");
-                }
-
-                foreach (IdentityError error in result.Errors)
-                {
-                    ModelState.AddModelError("", error.Description);
-                }
-            }
-
-            return View(model);
-        }
+      
 
 
-        // Türkçe karakterleri İngilizce'ye çeviren yardımcı fonksiyon
-        private string RemoveDiacritics(string text)
-        {
-            Dictionary<char, char> replacements = new Dictionary<char, char>
-            {
-                {'ç', 'c'}, {'Ç', 'C'},
-                {'ğ', 'g'}, {'Ğ', 'G'},
-                {'ı', 'i'}, {'İ', 'I'},
-                {'ö', 'o'}, {'Ö', 'O'},
-                {'ş', 's'}, {'Ş', 'S'},
-                {'ü', 'u'}, {'Ü', 'U'}
-            };
-
-            var result = new StringBuilder();
-            foreach (char c in text)
-            {
-                result.Append(replacements.ContainsKey(c) ? replacements[c] : c);
-            }
-            return result.ToString();
-        }
-
+      
         public async Task<IActionResult> Edit(string id)
         {
             if (id == null)
