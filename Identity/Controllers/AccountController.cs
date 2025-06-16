@@ -53,7 +53,7 @@ namespace Identity.Controllers
 
                     //email
                     await _emailsender.SendEmailAsync(user.Email, "Hesap Onayı", $"Lütfen email hesabınızı onaylamak için " +
-                        $"linke tıklayınız <a href='http://localhost:5034{url}'>tıklayınız.</a>");
+                        $"linke tıklayınız <a href='https://localhost:7055{url}'>tıklayınız.</a>");
 
                     TempData["message"] = "Mailinizi Onaylamanız Gerekmektedir";
                     return RedirectToAction("Login","Account");
